@@ -10,8 +10,11 @@ from utils import download_file
 if not os.path.isdir("files"):
     os.mkdir("files")
 
+if not os.path.isdir("samples"):
+    os.mkdir("samples")
 
 app = FastAPI()
+
 language = "en"
 device = "cpu"  # "cuda" if torch.cuda.is_available() else "cpu"
 # whisper models
@@ -112,3 +115,8 @@ async def root(input: TranscribeInput):
     data["task_durations"] = task_durations
 
     return {"success": True, "data": data}
+
+
+@app.post("/text-to-speech")
+async def root():
+    return {"success": True, "data": "Alive"}
