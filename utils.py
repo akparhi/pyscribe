@@ -32,7 +32,8 @@ def download_file(url, folder_name='files'):
     if (is_yt_url(url)):
         try:
             data = pytube.YouTube(url)
-            fname = data.streams.get_audio_only().download(output_path=folder_name)
+            fname = data.streams.get_audio_only().download(output_path=folder_name,
+                                                           filename=str(time.perf_counter()) + '_' + data.streams[0].title + '.mp4')
             return '/'.join(fname.split('/')[-2:])
         except Exception as e:
             print(e)
@@ -46,7 +47,7 @@ def download_file(url, folder_name='files'):
             else:
                 fname = get_filename(url)
 
-            saveto = folder_name + '/' + str(time.perf_counter()) + fname
+            saveto = folder_name + '/' + str(time.perf_counter()) + '_' + fname
             f = open(saveto, 'wb')
             f.write(r.content)
             return saveto
