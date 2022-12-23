@@ -35,7 +35,6 @@ model_a, metadata = whisperx.load_align_model(
 # summarizer model
 nltk.download('punkt')
 LANGUAGE = "english"
-SENTENCES_COUNT = 10
 
 tokenizer = Tokenizer(LANGUAGE)
 stemmer = Stemmer(LANGUAGE)
@@ -117,8 +116,9 @@ async def root(input: TranscribeInput):
     tic_5 = time.perf_counter()
     if summarize:
         parser = PlaintextParser.from_string(result["text"], tokenizer)
-        summary2 = summarizer(parser.document, SENTENCES_COUNT)
-        print(summary2)
+        no_of_sentences = len(parser.document.sentences)
+        summary = summarizer(parser.document, max(no_of_sentences//10, 5))
+        data["summary"] = " ".join([str(sentence) for sentence in summary])
 
     # 6.cleanups
     tic_6 = time.perf_counter()
