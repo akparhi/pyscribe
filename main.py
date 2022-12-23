@@ -6,6 +6,7 @@ from enum import Enum
 import whisperx
 import ffmpeg
 from utils import download_file
+from summarizer import Summarizer
 
 if not os.path.isdir("files"):
     os.mkdir("files")
@@ -26,6 +27,8 @@ models = {
 # aligner models
 model_a, metadata = whisperx.load_align_model(
     language_code=language, device=device)
+# summarizer model
+model_s = Summarizer()
 
 
 @app.get("/")
@@ -47,7 +50,7 @@ class TranscribeInput(BaseModel):
     url: str
     model: ModelEnum = ModelEnum.tiny
     accuracy: AccuracyEnum = AccuracyEnum.phrase
-    debug: bool = False
+    summarize: bool = False
 
 
 @app.post("/speech-to-text")
@@ -56,7 +59,7 @@ async def root(input: TranscribeInput):
     accuracy = input.accuracy
     url = input.url
     model = models[input.model]
-    debug = input.debug
+    summarize = input.summarize
 
     # response data
     data = {
@@ -64,54 +67,56 @@ async def root(input: TranscribeInput):
         "accuracy": accuracy,
         "task_durations": {},
         "duration": "",
+        "text": "",
+        "summary": "",
         "phrases": [],
+        "aligned_phrases": [],
         "words": []
     }
 
     # API
     # 1.download
-    tic_download = time.perf_counter()
+    tic_1 = time.perf_counter()
     src_filename = download_file(url)
-    toc_download = time.perf_counter()
 
     # 2.metadata
-    tic_metadata = time.perf_counter()
+    tic_2 = time.perf_counter()
     data["duration"] = ffmpeg.probe(src_filename)["format"]["duration"]
-    toc_metadata = time.perf_counter()
 
     # 3.transcription
-    tic_transcription = time.perf_counter()
+    tic_3 = time.perf_counter()
     result = model.transcribe(src_filename, fp16=False)
-    if debug:
-        data["text"] = result["text"]
+    data["text"] = result["text"]
     phrases = [{"b": round(phrase["start"], 1), "e": round(phrase["end"], 1), "p": phrase["text"]}
                for i, phrase in enumerate(result["segments"])]
     data["phrases"] = phrases
-    toc_transcription = time.perf_counter()
 
     # 4.alignment
-    tic_alignment = time.perf_counter()
+    tic_4 = time.perf_counter()
     if accuracy == "word":
         result_aligned = whisperx.align(
             result["segments"], model_a, metadata, src_filename, device)
-        data["phrases"] = [{"b": round(phrase["start"], 1), "e": round(phrase["end"], 1), "p": phrase["text"]}
-                           for i, phrase in enumerate(result_aligned["segments"])]
+        data["aligned_phrases"] = [{"b": round(phrase["start"], 1), "e": round(phrase["end"], 1), "p": phrase["text"]}
+                                   for i, phrase in enumerate(result_aligned["segments"])]
         data["words"] = [{"b": round(phrase["start"], 1), "e": round(phrase["end"], 1), "w": phrase["text"]}
                          for i, phrase in enumerate(result_aligned["word_segments"])]
-        if debug:
-            data["nonaligned_phrases"] = phrases
-    toc_alignment = time.perf_counter()
 
-    # 5.cleanups
+    # 5.summarization
+    tic_5 = time.perf_counter()
+    if summarize:
+        data["summary"] = model_s(result["text"], ratio=0.1, min_length=60)
+
+    # 6.cleanups
+    tic_6 = time.perf_counter()
     os.remove(src_filename)
     task_durations = {
-        "1.download": round(toc_download - tic_download, 1),
-        "2.metadata": round(toc_metadata - tic_metadata, 1),
-        "3.transcription": round(toc_transcription - tic_transcription, 1),
-        "4.alignment": round(toc_alignment - tic_alignment, 1),
-        "t.total": round(toc_alignment - tic_download, 1)
+        "1.download": round(tic_2 - tic_1, 1),
+        "2.metadata": round(tic_3 - tic_2, 1),
+        "3.transcription": round(tic_4 - tic_3, 1),
+        "4.alignment": round(tic_5 - tic_4, 1),
+        "5.summarization": round(tic_6 - tic_5, 1),
+        "t.total": round(tic_6 - tic_1, 1)
     }
-    task_durations["t.total"] = round(toc_alignment - tic_download, 1)
     data["task_durations"] = task_durations
 
     return {"success": True, "data": data}
