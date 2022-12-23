@@ -6,7 +6,12 @@ from enum import Enum
 import whisperx
 import ffmpeg
 from utils import download_file
-from summarizer import Summarizer
+from sumy.parsers.plaintext import PlaintextParser
+from sumy.summarizers.lsa import LsaSummarizer as Summarizer
+from sumy.nlp.stemmers import Stemmer
+from sumy.nlp.tokenizers import Tokenizer
+from sumy.utils import get_stop_words
+import nltk
 
 if not os.path.isdir("files"):
     os.mkdir("files")
@@ -28,7 +33,14 @@ models = {
 model_a, metadata = whisperx.load_align_model(
     language_code=language, device=device)
 # summarizer model
-model_s = Summarizer()
+nltk.download('punkt')
+LANGUAGE = "english"
+SENTENCES_COUNT = 10
+
+tokenizer = Tokenizer(LANGUAGE)
+stemmer = Stemmer(LANGUAGE)
+summarizer = Summarizer(stemmer)
+summarizer.stop_words = get_stop_words(LANGUAGE)
 
 
 @app.get("/")
@@ -104,7 +116,9 @@ async def root(input: TranscribeInput):
     # 5.summarization
     tic_5 = time.perf_counter()
     if summarize:
-        data["summary"] = model_s(result["text"], ratio=0.1, min_length=60)
+        parser = PlaintextParser.from_string(result["text"], tokenizer)
+        summary2 = summarizer(parser.document, SENTENCES_COUNT)
+        print(summary2)
 
     # 6.cleanups
     tic_6 = time.perf_counter()
