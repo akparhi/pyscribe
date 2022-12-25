@@ -12,6 +12,7 @@ from sumy.nlp.stemmers import Stemmer
 from sumy.nlp.tokenizers import Tokenizer
 from sumy.utils import get_stop_words
 import nltk
+import torch
 
 if not os.path.isdir("files"):
     os.mkdir("files")
@@ -22,12 +23,12 @@ if not os.path.isdir("samples"):
 app = FastAPI()
 
 language = "en"
-device = "cpu"  # "cuda" if torch.cuda.is_available() else "cpu"
+device = "cuda" if torch.cuda.is_available() else "cpu"
 # whisper models
 # tiny | base | small | medium | large
 models = {
-    "tiny": whisperx.load_model("tiny.en"),
-    "base": whisperx.load_model("base.en")
+    "tiny": whisperx.load_model("tiny.en", device),
+    "base": whisperx.load_model("base.en", device)
 }
 # aligner models
 model_a, metadata = whisperx.load_align_model(
@@ -94,7 +95,8 @@ async def root(input: TranscribeInput):
 
     # 2.metadata
     tic_2 = time.perf_counter()
-    data["duration"] = ffmpeg.probe(src_filename)["format"]["duration"]
+    data["duration"] = round(
+        float(ffmpeg.probe(src_filename)["format"]["duration"]), 2)
 
     # 3.transcription
     tic_3 = time.perf_counter()
@@ -111,7 +113,7 @@ async def root(input: TranscribeInput):
             result["segments"], model_a, metadata, src_filename, device)
         data["aligned_phrases"] = [{"b": round(phrase["start"], 1), "e": round(phrase["end"], 1), "p": phrase["text"].strip()}
                                    for i, phrase in enumerate(result_aligned["segments"])]
-        data["aligned_words"] = [{"b": round(phrase["start"], 1), "e": round(phrase["end"], 1), "w": phrase["text"].strip()}
+        data["aligned_words"] = [{"b": round(phrase["start"], 2), "e": round(phrase["end"], 2), "w": phrase["text"].strip()}
                                  for i, phrase in enumerate(result_aligned["word_segments"])]
 
     # 5.summarization
