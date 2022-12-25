@@ -35,7 +35,6 @@ sumy==0.11.0
 tokenizers==0.13.2
 tomli==2.0.1
 torch==1.13.1
-torchaudio==0.13.1
 tqdm==4.64.1
 transformers==4.25.1
 typing_extensions==4.4.0
@@ -45,4 +44,3 @@ uvloop==0.17.0
 watchfiles==0.18.1
 websockets==10.4
 whisper @ git+https://github.com/openai/whisper.git@0b5dcfdef7ec04250b76e13f1630e32b0935ce76
-whisperx @ git+https://github.com/m-bain/whisperx.git@c912f96ed35f59a602075c817510403f3f1fa9e7

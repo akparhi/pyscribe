@@ -16,9 +16,6 @@ from stable_whisper import load_model
 if not os.path.isdir("files"):
     os.mkdir("files")
 
-if not os.path.isdir("samples"):
-    os.mkdir("samples")
-
 app = FastAPI()
 
 device = "cpu"  # "cuda" if torch.cuda.is_available() else "cpu"
