@@ -5,10 +5,6 @@ import re
 import requests
 from requests.exceptions import RequestException
 
-yt_patterns = [
-
-]
-
 
 def is_yt_url(url):
     youtube_regex = (
