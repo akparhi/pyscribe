@@ -3,7 +3,6 @@ import time
 from fastapi import FastAPI
 from pydantic import BaseModel
 from enum import Enum
-import whisper
 import ffmpeg
 from utils import download_file
 from sumy.parsers.plaintext import PlaintextParser
@@ -12,7 +11,7 @@ from sumy.nlp.stemmers import Stemmer
 from sumy.nlp.tokenizers import Tokenizer
 from sumy.utils import get_stop_words
 import nltk
-from stable_whisper import load_model, stabilize_timestamps
+from stable_whisper import load_model
 
 if not os.path.isdir("files"):
     os.mkdir("files")
@@ -22,7 +21,6 @@ if not os.path.isdir("samples"):
 
 app = FastAPI()
 
-language = "en"
 device = "cpu"  # "cuda" if torch.cuda.is_available() else "cpu"
 # whisper models
 # tiny | base | small | medium | large
@@ -30,9 +28,6 @@ models = {
     "tiny": load_model("tiny"),
     "base": load_model("base")
 }
-# aligner models
-# model_a, metadata = whisperx.load_align_model(
-#     language_code=language, device=device)
 # summarizer model
 nltk.download('punkt')
 LANGUAGE = "english"
@@ -84,8 +79,7 @@ async def root(input: TranscribeInput):
         "text": "",
         "summary": "",
         "phrases": [],
-        "aligned_phrases": [],
-        "aligned_words": []
+        "words": []
     }
 
     # API
@@ -95,7 +89,8 @@ async def root(input: TranscribeInput):
 
     # 2.metadata
     tic_2 = time.perf_counter()
-    data["duration"] = ffmpeg.probe(src_filename)["format"]["duration"]
+    data["duration"] = round(
+        float(ffmpeg.probe(src_filename)["format"]["duration"]), 2)
 
     # 3.transcription
     tic_3 = time.perf_counter()
@@ -110,19 +105,13 @@ async def root(input: TranscribeInput):
     tic_4 = time.perf_counter()
     if accuracy == "word":
         stab_segments = result["segments"]
-        aligned_words = []
+        words = []
         for segment in stab_segments:
-            aligned_words += segment['whole_word_timestamps']
+            words += segment['whole_word_timestamps']
 
-        data['aligned_words'] = [{"t": round(word["timestamp"], 2), "w": word["word"].strip()}
-                                 for i, word in enumerate(aligned_words)]
-
-        # result_aligned = whisperx.align(
-        #     result["segments"], model_a, metadata, src_filename, device)
-        # data["aligned_phrases"] = [{"b": round(phrase["start"], 1), "e": round(phrase["end"], 1), "p": phrase["text"].strip()}
-        #                            for i, phrase in enumerate(result_aligned["segments"])]
-        # data["aligned_words"] = [{"b": round(phrase["start"], 1), "e": round(phrase["end"], 1), "w": phrase["text"].strip()}
-        #                          for i, phrase in enumerate(result_aligned["word_segments"])]
+        words_len = len(words)
+        data['words'] = [{"b": round(word["timestamp"], 2), "e": round(words[i+1]["timestamp"], 2) if (i < (words_len - 1)) else (data["duration"] if ((data["duration"] - round(word["timestamp"], 2)) <= 1)else round(word["timestamp"], 2) + 1), "w": word["word"].strip()}
+                         for i, word in enumerate(words)]
 
     # 5.summarization
     tic_5 = time.perf_counter()
