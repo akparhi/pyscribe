@@ -61,6 +61,7 @@ class TranscribeInput(BaseModel):
     url: str
     model: ModelEnum = ModelEnum.tiny
     accuracy: AccuracyEnum = AccuracyEnum.phrase
+    round_accuracy: int = 1
     summarize: bool = False
     max_summary_length: int = 5
 
@@ -68,9 +69,10 @@ class TranscribeInput(BaseModel):
 @app.post("/speech-to-text")
 async def root(input: TranscribeInput):
     # inputs
-    accuracy = input.accuracy
     url = input.url
     model = models[input.model]
+    accuracy = input.accuracy
+    round_accuracy = input.round_accuracy
     summarize = input.summarize
     max_summary_length = input.max_summary_length
 
@@ -97,7 +99,7 @@ async def root(input: TranscribeInput):
     src_filename_arr.pop()
     dst_filename = ".".join(src_filename_arr) + '_dst' + '.wav'
     src = AudioSegment.from_file(src_filename)
-    data["duration"] = round(src.duration_seconds, 2)
+    data["duration"] = round(src.duration_seconds, round_accuracy)
     src = src.set_frame_rate(sample_rate)
     src = src.set_channels(1)
     src.export(dst_filename, format="wav")
@@ -108,7 +110,7 @@ async def root(input: TranscribeInput):
     tic_3 = time.perf_counter()
     result = model.transcribe(filename, fp16=False)
     data["text"] = result["text"].strip()
-    data["phrases"] = [{"b": round(phrase["start"], 1), "e": round(phrase["end"], 1), "p": phrase["text"].strip()}
+    data["phrases"] = [{"b": round(phrase["start"], round_accuracy), "e": round(phrase["end"], round_accuracy), "p": phrase["text"].strip()}
                        for i, phrase in enumerate(result["segments"])]
 
     # 4.alignment
@@ -116,9 +118,9 @@ async def root(input: TranscribeInput):
     if accuracy == "word":
         result_aligned = whisperx.align(
             result["segments"], model_a, metadata, filename, device)
-        data["phrases"] = [{"b": round(phrase["start"], 1), "e": round(phrase["end"], 1), "p": phrase["text"].strip()}
+        data["phrases"] = [{"b": round(phrase["start"], round_accuracy), "e": round(phrase["end"], round_accuracy), "p": phrase["text"].strip()}
                            for i, phrase in enumerate(result_aligned["segments"])]
-        data["words"] = [{"b": round(phrase["start"], 2), "e": round(phrase["end"], 2), "w": phrase["text"].strip()}
+        data["words"] = [{"b": round(phrase["start"], round_accuracy), "e": round(phrase["end"], round_accuracy), "w": phrase["text"].strip()}
                          for i, phrase in enumerate(result_aligned["word_segments"])]
 
     # 5.summarization
@@ -135,12 +137,12 @@ async def root(input: TranscribeInput):
     tic_6 = time.perf_counter()
     os.remove(filename)
     task_durations = {
-        "1.download": round(tic_2 - tic_1, 1),
-        "2.metadata": round(tic_3 - tic_2, 1),
-        "3.transcription": round(tic_4 - tic_3, 1),
-        "4.alignment": round(tic_5 - tic_4, 1),
-        "5.summarization": round(tic_6 - tic_5, 1),
-        "t.total": round(tic_6 - tic_1, 1)
+        "1.download": round(tic_2 - tic_1, round_accuracy),
+        "2.metadata": round(tic_3 - tic_2, round_accuracy),
+        "3.transcription": round(tic_4 - tic_3, round_accuracy),
+        "4.alignment": round(tic_5 - tic_4, round_accuracy),
+        "5.summarization": round(tic_6 - tic_5, round_accuracy),
+        "t.total": round(tic_6 - tic_1, round_accuracy)
     }
     data["task_durations"] = task_durations
 
