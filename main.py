@@ -94,7 +94,7 @@ async def root(input: TranscribeInput):
     result = model.transcribe(src_filename, fp16=False, suppress_silence=True,
                               ts_num=16, lower_quantile=0.05, lower_threshold=0.1)
     data["text"] = result["text"].strip()
-    phrases = [{"b": round(phrase["start"], 1), "e": round(phrase["end"], 1), "p": phrase["text"].strip()}
+    phrases = [{"b": round(phrase["start"], 1), "e": round(phrase["end"], 1), "t": phrase["text"].strip()}
                for i, phrase in enumerate(result["segments"])]
     data["phrases"] = phrases
 
@@ -107,7 +107,7 @@ async def root(input: TranscribeInput):
             words += segment['whole_word_timestamps']
 
         words_len = len(words)
-        data['words'] = [{"b": round(word["timestamp"], 2), "e": round(words[i+1]["timestamp"], 2) if (i < (words_len - 1)) else (data["duration"] if ((data["duration"] - round(word["timestamp"], 2)) <= 1)else round(word["timestamp"], 2) + 1), "w": word["word"].strip()}
+        data['words'] = [{"b": round(word["timestamp"], 2), "e": round(words[i+1]["timestamp"], 2) if (i < (words_len - 1)) else (data["duration"] if ((data["duration"] - round(word["timestamp"], 2)) <= 1)else round(word["timestamp"], 2) + 1), "t": word["word"].strip()}
                          for i, word in enumerate(words)]
 
     # 5.summarization
