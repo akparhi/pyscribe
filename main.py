@@ -114,7 +114,7 @@ async def root(input: TranscribeInput):
         for segment in stab_segments:
             aligned_words += segment['whole_word_timestamps']
 
-        data['aligned_words'] = [{"t": round(word["timestamp"], 1), "w": word["word"].strip()}
+        data['aligned_words'] = [{"t": round(word["timestamp"], 2), "w": word["word"].strip()}
                                  for i, word in enumerate(aligned_words)]
 
         # result_aligned = whisperx.align(
