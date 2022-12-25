@@ -23,6 +23,7 @@ packaging==22.0
 pycodestyle==2.10.0
 pycountry==22.3.5
 pydantic==1.10.2
+pydub==0.25.1
 python-dotenv==0.21.0
 pytube==12.1.2
 PyYAML==6.0

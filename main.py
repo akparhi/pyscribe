@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from enum import Enum
 import whisperx
 import ffmpeg
+from pydub import AudioSegment
 from utils import download_file
 from sumy.parsers.plaintext import PlaintextParser
 from sumy.summarizers.lsa import LsaSummarizer as Summarizer
@@ -17,11 +18,9 @@ import torch
 if not os.path.isdir("files"):
     os.mkdir("files")
 
-if not os.path.isdir("samples"):
-    os.mkdir("samples")
-
 app = FastAPI()
 
+sample_rate = 16000
 language = "en"
 device = "cuda" if torch.cuda.is_available() else "cpu"
 # whisper models
@@ -84,37 +83,43 @@ async def root(input: TranscribeInput):
         "text": "",
         "summary": "",
         "phrases": [],
-        "aligned_phrases": [],
-        "aligned_words": []
+        "words": []
     }
 
     # API
     # 1.download
     tic_1 = time.perf_counter()
     src_filename = download_file(url)
-
+    filename = src_filename
     # 2.metadata
     tic_2 = time.perf_counter()
-    data["duration"] = round(
-        float(ffmpeg.probe(src_filename)["format"]["duration"]), 2)
+    src_filename_arr = src_filename.split(".")
+    src_filename_arr.pop()
+    dst_filename = ".".join(src_filename_arr) + '_dst' + '.wav'
+    src = AudioSegment.from_file(src_filename)
+    data["duration"] = round(src.duration_seconds, 2)
+    src = src.set_frame_rate(sample_rate)
+    src = src.set_channels(1)
+    src.export(dst_filename, format="wav")
+    os.remove(src_filename)
+    filename = dst_filename
 
     # 3.transcription
     tic_3 = time.perf_counter()
-    result = model.transcribe(src_filename, fp16=False)
+    result = model.transcribe(filename, fp16=False)
     data["text"] = result["text"].strip()
-    phrases = [{"b": round(phrase["start"], 1), "e": round(phrase["end"], 1), "p": phrase["text"].strip()}
-               for i, phrase in enumerate(result["segments"])]
-    data["phrases"] = phrases
+    data["phrases"] = [{"b": round(phrase["start"], 1), "e": round(phrase["end"], 1), "p": phrase["text"].strip()}
+                       for i, phrase in enumerate(result["segments"])]
 
     # 4.alignment
     tic_4 = time.perf_counter()
     if accuracy == "word":
         result_aligned = whisperx.align(
-            result["segments"], model_a, metadata, src_filename, device)
-        data["aligned_phrases"] = [{"b": round(phrase["start"], 1), "e": round(phrase["end"], 1), "p": phrase["text"].strip()}
-                                   for i, phrase in enumerate(result_aligned["segments"])]
-        data["aligned_words"] = [{"b": round(phrase["start"], 2), "e": round(phrase["end"], 2), "w": phrase["text"].strip()}
-                                 for i, phrase in enumerate(result_aligned["word_segments"])]
+            result["segments"], model_a, metadata, filename, device)
+        data["phrases"] = [{"b": round(phrase["start"], 1), "e": round(phrase["end"], 1), "p": phrase["text"].strip()}
+                           for i, phrase in enumerate(result_aligned["segments"])]
+        data["words"] = [{"b": round(phrase["start"], 2), "e": round(phrase["end"], 2), "w": phrase["text"].strip()}
+                         for i, phrase in enumerate(result_aligned["word_segments"])]
 
     # 5.summarization
     tic_5 = time.perf_counter()
@@ -128,7 +133,7 @@ async def root(input: TranscribeInput):
 
     # 6.cleanups
     tic_6 = time.perf_counter()
-    os.remove(src_filename)
+    os.remove(filename)
     task_durations = {
         "1.download": round(tic_2 - tic_1, 1),
         "2.metadata": round(tic_3 - tic_2, 1),
