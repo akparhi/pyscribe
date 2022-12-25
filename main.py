@@ -62,6 +62,7 @@ class TranscribeInput(BaseModel):
     model: ModelEnum = ModelEnum.tiny
     accuracy: AccuracyEnum = AccuracyEnum.phrase
     summarize: bool = False
+    max_summary_length: int = 5
 
 
 @app.post("/speech-to-text")
@@ -71,6 +72,7 @@ async def root(input: TranscribeInput):
     url = input.url
     model = models[input.model]
     summarize = input.summarize
+    max_summary_length = input.max_summary_length
 
     # response data
     data = {
@@ -82,7 +84,7 @@ async def root(input: TranscribeInput):
         "summary": "",
         "phrases": [],
         "aligned_phrases": [],
-        "words": []
+        "aligned_words": []
     }
 
     # API
@@ -97,8 +99,8 @@ async def root(input: TranscribeInput):
     # 3.transcription
     tic_3 = time.perf_counter()
     result = model.transcribe(src_filename, fp16=False)
-    data["text"] = result["text"]
-    phrases = [{"b": round(phrase["start"], 1), "e": round(phrase["end"], 1), "p": phrase["text"]}
+    data["text"] = result["text"].strip()
+    phrases = [{"b": round(phrase["start"], 1), "e": round(phrase["end"], 1), "p": phrase["text"].strip()}
                for i, phrase in enumerate(result["segments"])]
     data["phrases"] = phrases
 
@@ -107,18 +109,20 @@ async def root(input: TranscribeInput):
     if accuracy == "word":
         result_aligned = whisperx.align(
             result["segments"], model_a, metadata, src_filename, device)
-        data["aligned_phrases"] = [{"b": round(phrase["start"], 1), "e": round(phrase["end"], 1), "p": phrase["text"]}
+        data["aligned_phrases"] = [{"b": round(phrase["start"], 1), "e": round(phrase["end"], 1), "p": phrase["text"].strip()}
                                    for i, phrase in enumerate(result_aligned["segments"])]
-        data["words"] = [{"b": round(phrase["start"], 1), "e": round(phrase["end"], 1), "w": phrase["text"]}
-                         for i, phrase in enumerate(result_aligned["word_segments"])]
+        data["aligned_words"] = [{"b": round(phrase["start"], 1), "e": round(phrase["end"], 1), "w": phrase["text"].strip()}
+                                 for i, phrase in enumerate(result_aligned["word_segments"])]
 
     # 5.summarization
     tic_5 = time.perf_counter()
     if summarize:
-        parser = PlaintextParser.from_string(result["text"], tokenizer)
+        parser = PlaintextParser.from_string(result["text"].strip(), tokenizer)
         no_of_sentences = len(parser.document.sentences)
-        summary = summarizer(parser.document, max(no_of_sentences//10, 5))
-        data["summary"] = " ".join([str(sentence) for sentence in summary])
+        summary = summarizer(parser.document, min(
+            max(no_of_sentences//10, 1), max_summary_length))
+        data["summary"] = " ".join([str(sentence).strip()
+                                   for sentence in summary])
 
     # 6.cleanups
     tic_6 = time.perf_counter()
