@@ -4,7 +4,6 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from enum import Enum
 import whisperx
-import ffmpeg
 from pydub import AudioSegment
 from utils import download_file
 from sumy.parsers.plaintext import PlaintextParser
