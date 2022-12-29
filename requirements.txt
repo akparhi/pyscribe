@@ -44,4 +44,4 @@ uvicorn==0.20.0
 uvloop==0.17.0
 watchfiles==0.18.1
 websockets==10.4
-whisperx @ git+https://github.com/m-bain/whisperx.git@c912f96ed35f59a602075c817510403f3f1fa9e7
+whisperx @ git+https://github.com/m-bain/whisperx.git@93d661f2e4b416770052c28e99a4f2d583259686
