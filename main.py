@@ -1,17 +1,19 @@
 import os
 import time
+from enum import Enum
+
+import ffmpeg
+import nltk
 from fastapi import FastAPI
 from pydantic import BaseModel
-from enum import Enum
-import ffmpeg
-from utils import download_file
-from sumy.parsers.plaintext import PlaintextParser
-from sumy.summarizers.lsa import LsaSummarizer as Summarizer
+from stable_whisper import load_model
 from sumy.nlp.stemmers import Stemmer
 from sumy.nlp.tokenizers import Tokenizer
+from sumy.parsers.plaintext import PlaintextParser
+from sumy.summarizers.lsa import LsaSummarizer as Summarizer
 from sumy.utils import get_stop_words
-import nltk
-from stable_whisper import load_model
+
+from utils import download_file
 
 if not os.path.isdir("files"):
     os.mkdir("files")

@@ -1,7 +1,8 @@
 import os
-import time
-import pytube
 import re
+import time
+
+import pytube
 import requests
 from requests.exceptions import RequestException
 
