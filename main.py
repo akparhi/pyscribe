@@ -60,7 +60,7 @@ class TranscribeInput(BaseModel):
     url: str
     model: ModelEnum = ModelEnum.tiny
     accuracy: AccuracyEnum = AccuracyEnum.phrase
-    round_accuracy: int = 1
+    round_accuracy: int = 2
     summarize: bool = False
     max_summary_length: int = 5
 
@@ -83,6 +83,7 @@ async def root(input: TranscribeInput):
         "duration": "",
         "text": "",
         "summary": "",
+        "bad_segments": 0,
         "phrases": [],
         "words": []
     }
@@ -116,8 +117,17 @@ async def root(input: TranscribeInput):
     # 4.alignment
     tic_4 = time.perf_counter()
     if accuracy == "word":
+        segments = []
+        bad_segments = []
+        for i, segment in enumerate(result["segments"]):
+            if segment["end"] > segment["start"]:
+                segments.append(segment)
+            else:
+                bad_segments.append(segment)
+        print(len(bad_segments), bad_segments)
+        data["bad_segments"] = bad_segments
         result_aligned = whisperx.align(
-            result["segments"], model_a, metadata, filename, device)
+            segments, model_a, metadata, filename, device)
         data["phrases"] = [{"b": round(phrase["start"], round_accuracy), "e": round(phrase["end"], round_accuracy), "p": phrase["text"].strip()}
                            for i, phrase in enumerate(result_aligned["segments"])]
         data["words"] = [{"b": round(phrase["start"], round_accuracy), "e": round(phrase["end"], round_accuracy), "w": phrase["text"].strip()}
@@ -131,7 +141,7 @@ async def root(input: TranscribeInput):
         summary = summarizer(parser.document, min(
             max(no_of_sentences//10, 1), max_summary_length))
         data["summary"] = " ".join([str(sentence).strip()
-                                   for sentence in summary])
+                                    for sentence in summary])
 
     # 6.cleanups
     tic_6 = time.perf_counter()
@@ -149,6 +159,6 @@ async def root(input: TranscribeInput):
     return {"success": True, "data": data}
 
 
-@app.post("/text-to-speech")
+@ app.post("/text-to-speech")
 async def root():
     return {"success": True, "data": "Alive"}
