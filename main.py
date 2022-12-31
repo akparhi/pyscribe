@@ -109,8 +109,9 @@ async def root(input: TranscribeInput):
             words += segment['whole_word_timestamps']
 
         words_len = len(words)
-        data['words'] = [{"b": round(word["timestamp"], 2), "e": round(words[i+1]["timestamp"], 2) if (i < (words_len - 1)) else (data["duration"] if ((data["duration"] - round(word["timestamp"], 2)) <= 1)else round(word["timestamp"], 2) + 1), "t": word["word"].strip()}
+        data['words'] = [{"c": round(word["confidence"], 2), "b": round(word["timestamp"], 2), "e": round(words[i+1]["timestamp"], 2) if (i < (words_len - 1)) else (data["duration"] if ((data["duration"] - round(word["timestamp"], 2)) <= 1)else round(word["timestamp"], 2) + 1), "t": word["word"].strip()}
                          for i, word in enumerate(words)]
+        os.remove("filename.pickle")
 
     # 5.summarization
     tic_5 = time.perf_counter()
