@@ -96,6 +96,7 @@ async def root(input: TranscribeInput):
     result = model.transcribe(src_filename, fp16=False, suppress_silence=True,
                               ts_num=16, lower_quantile=0.05, lower_threshold=0.1)
     data["text"] = result["text"].strip()
+    print(result["segments"])
     phrases = [{"b": round(phrase["start"], 1), "e": round(phrase["end"], 1), "t": phrase["text"].strip()}
                for i, phrase in enumerate(result["segments"])]
     data["phrases"] = phrases
