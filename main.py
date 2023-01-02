@@ -96,22 +96,22 @@ async def root(input: TranscribeInput):
     result = model.transcribe(src_filename, fp16=False, suppress_silence=True,
                               ts_num=16, lower_quantile=0.05, lower_threshold=0.1)
     data["text"] = result["text"].strip()
-    print(result["segments"])
-    phrases = [{"b": round(phrase["start"], 1), "e": round(phrase["end"], 1), "t": phrase["text"].strip()}
-               for i, phrase in enumerate(result["segments"])]
-    data["phrases"] = phrases
+    data["phrases"] = [{"b": round(phrase["start"], 1), "e": round(phrase["end"], 1), "t": phrase["text"].strip()}
+                       for phrase in result["segments"]]
 
     # 4.alignment
     tic_4 = time.perf_counter()
     if accuracy == "word":
         stab_segments = result["segments"]
+        data["phrases"] = [{"b": round(phrase["start"], 1), "e": round(phrase["end"], 1), "t": phrase["text"].strip(), "c": [
+            {"t": word["word"].strip(), "c": round(word["confidence"], 2)} for word in phrase['whole_word_timestamps']]} for phrase in result["segments"]]
         words = []
         for segment in stab_segments:
             words += segment['whole_word_timestamps']
 
         words_len = len(words)
-        data['words'] = [{"c": round(word["confidence"], 2), "b": round(word["timestamp"], 2), "e": round(words[i+1]["timestamp"], 2) if (i < (words_len - 1)) else (data["duration"] if ((data["duration"] - round(word["timestamp"], 2)) <= 1)else round(word["timestamp"], 2) + 1), "t": word["word"].strip()}
-                         for i, word in enumerate(words)]
+        data['words'] = [{"b": round(word["timestamp"], 1), "e": round(words[i+1]["timestamp"], 1) if (i < (words_len - 1)) else (data["duration"] if ((data["duration"] - round(
+            word["timestamp"], 1)) <= 1)else round(word["timestamp"], 1) + 1), "t": word["word"].strip(), "c": round(word["confidence"], 2)} for i, word in enumerate(words)]
         os.remove("filename.pickle")
 
     # 5.summarization
