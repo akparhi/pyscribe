@@ -24,8 +24,7 @@ device = "cpu"  # "cuda" if torch.cuda.is_available() else "cpu"
 # whisper models
 # tiny | base | small | medium | large
 models = {
-    "tiny": load_model("tiny"),
-    "base": load_model("base")
+    "tiny": load_model("tiny")
 }
 # summarizer model
 nltk.download('punkt')
@@ -43,13 +42,12 @@ async def root():
 
 
 class AccuracyEnum(str, Enum):
-    phrase = "phrase"
-    word = "word"
+    normal = "normal"
+    high = "high"
 
 
 class ModelEnum(str, Enum):
     tiny = "tiny"
-    base = "base"
 
 
 class TranscribeInput(BaseModel):
@@ -101,7 +99,7 @@ async def root(input: TranscribeInput):
 
     # 4.alignment
     tic_4 = time.perf_counter()
-    if accuracy == "word":
+    if accuracy == "high":
         stab_segments = result["segments"]
         data["phrases"] = [{"b": round(phrase["start"], 1), "e": round(phrase["end"], 1), "t": phrase["text"].strip(), "c": [
             {"t": word["word"].strip(), "c": round(word["confidence"], 2)} for word in phrase['whole_word_timestamps']]} for phrase in result["segments"]]
