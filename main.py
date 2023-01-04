@@ -42,8 +42,8 @@ async def root():
 
 
 class AccuracyEnum(str, Enum):
-    normal = "normal"
-    high = "high"
+    NORMAL = "NORMAL"
+    HIGH = "HIGH"
 
 
 class ModelEnum(str, Enum):
@@ -99,7 +99,7 @@ async def root(input: TranscribeInput):
 
     # 4.alignment
     tic_4 = time.perf_counter()
-    if accuracy == "high":
+    if accuracy == "HIGH":
         stab_segments = result["segments"]
         data["phrases"] = [{"b": round(phrase["start"], 1), "e": round(phrase["end"], 1), "t": phrase["text"].strip(), "c": [
             {"t": word["word"].strip(), "c": round(word["confidence"], 2)} for word in phrase['whole_word_timestamps']]} for phrase in result["segments"]]
