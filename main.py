@@ -53,7 +53,7 @@ class ModelEnum(str, Enum):
 class TranscribeInput(BaseModel):
     url: str
     model: ModelEnum = ModelEnum.tiny
-    accuracy: AccuracyEnum = AccuracyEnum.phrase
+    accuracy: AccuracyEnum = AccuracyEnum.NORMAL
     summarize: bool = False
     max_summary_length: int = 5
 
