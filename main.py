@@ -12,6 +12,7 @@ from sumy.nlp.tokenizers import Tokenizer
 from sumy.parsers.plaintext import PlaintextParser
 from sumy.summarizers.lsa import LsaSummarizer as Summarizer
 from sumy.utils import get_stop_words
+from torch import cuda
 
 from utils import download_file
 
@@ -20,7 +21,7 @@ if not os.path.isdir("files"):
 
 app = FastAPI()
 
-device = "cpu"  # "cuda" if torch.cuda.is_available() else "cpu"
+device = "cuda" if cuda.is_available() else "cpu"
 # whisper models
 # tiny | base | small | medium | large
 models = {
