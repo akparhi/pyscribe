@@ -22,6 +22,7 @@ if not os.path.isdir("files"):
 app = FastAPI()
 
 device = "cuda" if cuda.is_available() else "cpu"
+print(device)
 # whisper models
 # tiny | base | small | medium | large
 models = {
