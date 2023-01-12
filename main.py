@@ -84,8 +84,7 @@ async def root(input: TranscribeInput):
         "text": "",
         "summary": "",
         "phrases": [],
-        "aligned_phrases": [],
-        "aligned_words": []
+        "words": []
     }
 
     # API
@@ -111,10 +110,10 @@ async def root(input: TranscribeInput):
     if accuracy == "word":
         result_aligned = whisperx.align(
             result["segments"], model_a, metadata, src_filename, device)
-        data["aligned_phrases"] = [{"b": round(phrase["start"], 1), "e": round(phrase["end"], 1), "p": phrase["text"].strip()}
-                                   for i, phrase in enumerate(result_aligned["segments"])]
-        data["aligned_words"] = [{"b": round(phrase["start"], 2), "e": round(phrase["end"], 2), "w": phrase["text"].strip()}
-                                 for i, phrase in enumerate(result_aligned["word_segments"])]
+        data["phrases"] = [{"b": round(phrase["start"], 1), "e": round(phrase["end"], 1), "p": phrase["text"].strip()}
+                           for phrase in result_aligned["segments"]]
+        data["words"] = [{"b": round(phrase["start"], 2), "e": round(phrase["end"], 2), "w": phrase["text"].strip()}
+                         for phrase in result_aligned["word_segments"]]
 
     # 5.summarization
     tic_5 = time.perf_counter()
