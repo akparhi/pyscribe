@@ -27,8 +27,7 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 # whisper models
 # tiny | base | small | medium | large
 models = {
-    "tiny": whisperx.load_model("tiny.en", device),
-    "base": whisperx.load_model("base.en", device)
+    "tiny": whisperx.load_model("tiny.en", device)
 }
 # aligner models
 model_a, metadata = whisperx.load_align_model(
@@ -49,19 +48,18 @@ async def root():
 
 
 class AccuracyEnum(str, Enum):
-    phrase = "phrase"
-    word = "word"
+    NORMAL = "NORMAL"
+    HIGH = "HIGH"
 
 
 class ModelEnum(str, Enum):
     tiny = "tiny"
-    base = "base"
 
 
 class TranscribeInput(BaseModel):
     url: str
     model: ModelEnum = ModelEnum.tiny
-    accuracy: AccuracyEnum = AccuracyEnum.phrase
+    accuracy: AccuracyEnum = AccuracyEnum.NORMAL
     summarize: bool = False
     max_summary_length: int = 5
 
@@ -107,7 +105,7 @@ async def root(input: TranscribeInput):
 
     # 4.alignment
     tic_4 = time.perf_counter()
-    if accuracy == "word":
+    if accuracy == "HIGH":
         result_aligned = whisperx.align(
             result["segments"], model_a, metadata, src_filename, device)
         data["phrases"] = [{"b": round(phrase["start"], 1), "e": round(phrase["end"], 1), "p": phrase["text"].strip()}
