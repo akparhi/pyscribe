@@ -19,6 +19,7 @@ lxml==4.9.2
 more-itertools==9.0.0
 nltk==3.8
 numpy==1.24.1
+openai-whisper @ git+https://github.com/openai/whisper.git@9d646db9d885d7d86fa5f40aa29a48147379ed70
 packaging==22.0
 pycodestyle==2.10.0
 pycountry==22.3.5
@@ -43,4 +44,3 @@ uvicorn==0.20.0
 uvloop==0.17.0
 watchfiles==0.18.1
 websockets==10.4
-whisper @ git+https://github.com/openai/whisper.git@53807677fe8bc892fe0fff970e8b24ddd3848596
