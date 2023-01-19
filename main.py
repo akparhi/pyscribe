@@ -57,7 +57,7 @@ class TranscribeInput(BaseModel):
     model: ModelEnum = ModelEnum.tiny
     accuracy: AccuracyEnum = AccuracyEnum.NORMAL
     summarize: bool = False
-    max_summary_length: int = 5
+    max_summary_length: int = 10
 
 
 @app.post("/speech-to-text")
