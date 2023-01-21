@@ -22,7 +22,6 @@ if not os.path.isdir("files"):
 app = FastAPI()
 
 device = "cuda" if cuda.is_available() else "cpu"
-print(device)
 # whisper models
 # tiny | base | small | medium | large
 models = {
@@ -71,6 +70,7 @@ async def root(input: TranscribeInput):
 
     # response data
     data = {
+        "device": device,
         "model": input.model,
         "accuracy": accuracy,
         "task_durations": {},
