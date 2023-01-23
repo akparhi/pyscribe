@@ -103,7 +103,7 @@ async def root(input: TranscribeInput):
     tic_4 = time.perf_counter()
     if accuracy == "HIGH":
         stab_segments = result["segments"]
-        data["phrases"] = [{"b": round(phrase["start"], 2), "e": round(phrase["end"], 2), "t": phrase["text"].strip(), "c": [{"b": round(word["timestamp"], 2), "e": round(phrase['whole_word_timestamps'][i+1]["timestamp"], 2) if (i < (len(phrase['whole_word_timestamps']) - 1)) else (round(
+        data["phrases"] = [{"b": round(phrase["start"], 2), "e": round(phrase["end"], 2), "t": phrase["text"].strip(), "w": [{"b": round(word["timestamp"], 2), "e": round(phrase['whole_word_timestamps'][i+1]["timestamp"], 2) if (i < (len(phrase['whole_word_timestamps']) - 1)) else (round(
             phrase["end"], 2) if ((round(phrase["end"], 2) - round(word["timestamp"], 2)) <= 1) else round(word["timestamp"] + 1, 2)), "t": word["word"].strip(), "c": round(word["confidence"], 2)} for i, word in enumerate(phrase['whole_word_timestamps'])]} for phrase in result["segments"]]
         words = []
         for segment in stab_segments:
