@@ -19,7 +19,7 @@ lxml==4.9.2
 more-itertools==9.0.0
 nltk==3.8
 numpy==1.24.1
-openai-whisper @ git+https://github.com/openai/whisper.git@9d646db9d885d7d86fa5f40aa29a48147379ed70
+openai-whisper==20230124
 packaging==22.0
 pycodestyle==2.10.0
 pycountry==22.3.5
